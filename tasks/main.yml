@@ -1,2 +1,11 @@
----
-# tasks file for win_iis
+- name: Install IIS related features
+  win_feature:
+    name: Net-Framework-Core
+    state: present
+
+- name: Install IIS related features
+  win_feature:
+    name: Web-Server
+    state: present
+    include_sub_features: yes
+    include_management_tools: yes
