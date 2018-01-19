@@ -12,3 +12,10 @@ win_wcf_features:
   - name: NET-WCF-HTTP-Activation45
 
 win_features: "{{ win_iis_base_features + win_wcf_features }}"
+
+chocolatey_pkgs:
+# The monitoring app uses dotnetcore which requires the command dotnet.exe (in
+# c:\program files\dotnet)
+  - dotnetcore
+  # TODO confirm is we need this
+  # - dotnetcore-sdk

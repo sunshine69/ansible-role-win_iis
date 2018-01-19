@@ -5,3 +5,9 @@
     include_sub_features: "{{ item.include_sub_features|default(omit) }}"
     include_management_tools: "{{ item.include_management_tools|default(omit) }}"
   with_items: "{{ win_features }}"
+
+- name: Install chocolatey pkgs
+  win_chocolatey:
+    name: "{{ item }}"
+    state: present
+  with_items: "{{ chocolatey_pkgs }}"
