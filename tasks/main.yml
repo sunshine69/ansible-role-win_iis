@@ -1,11 +1,7 @@
 - name: Install IIS related features
   win_feature:
-    name: Net-Framework-Core
+    name: "{{ item.name }}"
     state: present
-
-- name: Install IIS related features
-  win_feature:
-    name: Web-Server
-    state: present
-    include_sub_features: yes
-    include_management_tools: yes
+    include_sub_features: "{{ item.include_sub_features|default(omit) }}"
+    include_management_tools: "{{ item.include_management_tools|default(omit) }}"
+  with_items: "{{ win_features }}"

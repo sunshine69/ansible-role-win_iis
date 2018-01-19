@@ -1,2 +1,14 @@
----
 # defaults file for win_iis
+win_iis_base_features:
+  - name: Net-Framework-Core
+  - name: Web-Server
+    include_sub_features: yes
+    include_management_tools: yes
+
+win_wcf_features:
+  # These are for the WCF to work - see
+  # https://docs.microsoft.com/en-us/dotnet/framework/wcf/whats-wcf
+  - name: NET-HTTP-Activation
+  - name: NET-WCF-HTTP-Activation45
+
+win_features: "{{ win_iis_base_features + win_wcf_features }}"
