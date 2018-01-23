@@ -1,11 +1,21 @@
 - name: Install IIS related features
   win_feature:
-    name: Net-Framework-Core
+    name: "{{ item.name }}"
     state: present
+    include_sub_features: "{{ item.include_sub_features|default(omit) }}"
+    include_management_tools: "{{ item.include_management_tools|default(omit) }}"
+  with_items: "{{ win_features }}"
 
-- name: Install IIS related features
-  win_feature:
-    name: Web-Server
+- name: Install chocolatey pkgs
+  win_chocolatey:
+    name: "{{ item }}"
     state: present
-    include_sub_features: yes
-    include_management_tools: yes
+  with_items: "{{ chocolatey_pkgs }}"
+
+- name: Deploy role custom PS script
+  win_template:
+    src: win_iis-custom-script.ps1.j2
+    dest: '{{ ansible_install_dir }}\win_iis-custom-script.ps1'
+
+- name: Run custom PS scripts
+  win_command: 'powershell {{ ansible_install_dir }}\win_iis-custom-script.ps1'
