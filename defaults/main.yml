@@ -17,5 +17,3 @@ chocolatey_pkgs:
 # The monitoring app uses dotnetcore which requires the command dotnet.exe (in
 # c:\program files\dotnet)
   - dotnetcore
-  # TODO confirm is we need this
-  # - dotnetcore-sdk
