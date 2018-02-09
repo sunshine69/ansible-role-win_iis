@@ -1,22 +1,52 @@
-Role Name
+Role: win_iis
 =========
 
-A brief description of the role goes here.
+Install IIS and dotnet suites
 
 Requirements
 ------------
 
-Any pre-requisites that may not be covered by Ansible itself or the role should be mentioned here. For instance, if the role uses the EC2 module, it may be a good idea to mention in this section that the boto package is required.
 
 Role Variables
 --------------
 
-A description of the settable variables for this role should go here, including any variables that are in defaults/main.yml, vars/main.yml, and any variables that can/should be set via parameters to the role. Any variables that are read from other roles and/or the global scope (ie. hostvars, group vars, etc.) should be mentioned here as well.
+If not defined anywhere, the for a variable, dict key name will be the exact parameter name of the corresponding ansible modules.
+
+- `win_feature_source` - Path to the source to allow for win_feature to install/remove. Optional - Default not set.
+
+The path points to a directory which seems not obvious. It looks like a signature to allow windows to find out its installation media rather than a directory containing files of sources information.
+
+Example:
+```win_feature_source: 'z:\sources\sxs'
+```
+
+- `win_iis_base_features` - a list of dict of base features - optional - default
+```
+win_iis_base_features:
+  - name: Net-Framework-Core
+  - name: Web-Server
+    include_sub_features: yes
+    include_management_tools: yes
+```
+- `win_wcf_features` - These are for the WCF to work - see https://docs.microsoft.com/en-us/dotnet/framework/wcf/whats-wcf - optional - default
+```
+win_wcf_features:
+  - name: NET-HTTP-Activation
+  - name: NET-WCF-HTTP-Activation45
+```
+- `win_extra_features` - Extra features can be added in inventory - optiona, default []
+- `win_features` - The final features list we are going to install - optional - default is union of all above.
+``` {{ win_iis_base_features + win_wcf_features + win_extra_features }}
+```
+- `chocolatey_base_pkgs` - optional - default [ 'dotnetcore' ]
+- `chocolatey_extra_pkgs` - optional default  []
+- `chocolatey_pkgs` - optional - default 
+``` "{{ chocolatey_base_pkgs + chocolatey_extra_pkgs }}"
+```
 
 Dependencies
 ------------
 
-A list of other roles hosted on Galaxy should go here, plus any details in regards to parameters that may need to be set for other roles, or variables that are used from other roles.
 
 Example Playbook
 ----------------

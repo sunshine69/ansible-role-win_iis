@@ -1,6 +1,7 @@
 - name: Install IIS related features
   win_feature:
     name: "{{ item.name }}"
+    source: "{{ win_feature_source|default(omit) }}"
     state: present
     include_sub_features: "{{ item.include_sub_features|default(omit) }}"
     include_management_tools: "{{ item.include_management_tools|default(omit) }}"
