@@ -23,7 +23,7 @@
 
 - name: Set fact win_iis_directories
   set_fact:
-    win_iis_directories: "{{ win_iis_sites_path + win_iis_webapplications_path }}"
+    win_iis_directories: "{{ (win_iis_sites_path + win_iis_webapplications_path)|unique }}"
 
 - name: Make sure all physical path do exist
   win_file:
@@ -38,7 +38,7 @@
 
 - name: Set fact win_iis_application_pools_all
   set_fact:
-    win_iis_application_pools_all: "{{ win_iis_application_pools + win_iis_application_pools_from_sites|unique }}"
+    win_iis_application_pools_all: "{{ (win_iis_application_pools + win_iis_application_pools_from_sites)|unique }}"
 
 - name: Create Application Pool defined in win_iis_application_pools
   win_iis_webapppool:
@@ -52,6 +52,7 @@
         win_iis_temp_var:
           name: "{{ item }}"
       with_items: "{{ win_iis_webapplications|map(attribute='site')|list|unique }}"
+      when: item not in win_iis_websites|map(attribute='name')|list
       register: win_iis_temp_var_out
 
     - name: Set fact win_iis_websites_from_webapplication
@@ -61,7 +62,7 @@
 
 - name: Set fact win_iis_websites_all
   set_fact:
-    win_iis_websites_all: "{{ win_iis_websites + win_iis_websites_from_webapplication|unique }}"
+    win_iis_websites_all: "{{ win_iis_websites + win_iis_websites_from_webapplication }}"
 
 - name: Create web sites defined in win_iis_websites
   win_iis_website:
