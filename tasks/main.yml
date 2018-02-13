@@ -12,3 +12,58 @@
     name: "{{ item }}"
     state: present
   with_items: "{{ chocolatey_pkgs }}"
+
+- name: Set fact win_iis_application_pool_parsed list from win_iis_sites
+  set_fact:
+    win_iis_application_pools_parsed: "{{ win_iis_sites|map(attribute='application_pool')|list|unique }}"
+  when: win_iis_sites
+
+- name: Set fact win_iis_application_pools_all
+  set_fact:
+    win_iis_application_pools_all: "{{ win_iis_application_pools + win_iis_application_pools_parsed|default([])|unique }}"
+
+- name: Create Application Pool defined in win_iis_application_pools
+  win_iis_webapppool:
+    name: "{{ item }}"
+    state: present
+  with_items: "{{ win_iis_application_pools_all|default([]) }}"
+
+- block:
+    - name: Set fact win_iis_websites_parsed list from win_iis_webapplications if not provided
+      set_fact:
+        win_iis_websites_parsed:
+          name: "{{ item }}"
+      with_items: "{{ win_iis_webapplications|map(attribute='site')|list|unique }}"
+      register: win_iis_websites_parsed_out
+
+    - name: Set fact win_iis_websites
+      set_fact:
+        win_iis_websites_parsed: "{{ win_iis_websites_parsed_out.results|map(attribute='ansible_facts.win_iis_websites_parsed')|list }}"
+  when: win_iis_webapplications
+
+- name: Set fact win_iis_websites_all
+  set_fact:
+    win_iis_websites_all: "{{ win_iis_websites + win_iis_websites_parsed|default([])|unique }}"
+
+- name: Create web sites defined in win_iis_websites
+  win_iis_website:
+    application_pool: "{{ item.application_pool|default(omit) }}"
+    hostname: "{{ item.hostname|default(omit) }}"
+    ip: "{{ item.ip|default(omit) }}"
+    name: "{{ item.name }}"
+    parameters: "{{ item.parameters|default(omit) }}"
+    physical_path: "{{ item.physical_path|default(omit) }}"
+    port: "{{ item.port|default(omit) }}"
+    site_id: "{{ item.site_id|default(omit) }}"
+    ssl: "{{ item.ssl|default(omit) }}"
+    state: "{{ item.state|default(omit) }}"
+  with_items: "{{ win_iis_websites_all|default([]) }}"
+
+- name: Create Web Applciation defined in win_iis_webapplications
+  win_iis_webapplication:
+    name: "{{ item.name }}"
+    application_pool: "{{ item.application_pool|default(omit) }}"
+    physical_path: "{{ item.physical_path|default(omit) }}"
+    site: "{{ item.site }}"
+    state: "{{ item.state|default(omit) }}"
+  with_items: "{{ win_iis_webapplications|default([]) }}"

@@ -44,6 +44,18 @@ win_wcf_features:
 ``` "{{ chocolatey_base_pkgs + chocolatey_extra_pkgs }}"
 ```
 
+- ` win_iis_application_pools` - List of application pool name to be created or remove - Optional - default empty
+    If in `win_iis_websites` (see below) is provided and in each
+    item the key `application_pool` is set then these values will automatically be parsed
+    and merge.
+
+- `win_iis_websites` - List of sites to be creeated - Optional - Default empty
+   If in `win_iis_webapplications` (see below) is provided and in
+   each item the key `site` is set then these values will automatically be parsed and merged.
+
+- `win_iis_webapplications` - List of web app to be created - Optional - Default empty
+
+
 Dependencies
 ------------
 

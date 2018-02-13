@@ -23,3 +23,7 @@ chocolatey_base_pkgs:
 chocolatey_extra_pkgs: []
 
 chocolatey_pkgs: "{{ chocolatey_base_pkgs + chocolatey_extra_pkgs }}"
+
+win_iis_application_pools: []
+win_iis_websites: []
+win_iis_webapplications: []
