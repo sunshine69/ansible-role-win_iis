@@ -13,6 +13,23 @@
     state: present
   with_items: "{{ chocolatey_pkgs }}"
 
+- block:
+    - name: Set fact win_iis_sites_path from win_iis_sites
+      set_fact:
+        win_iis_sites_path: "{{ win_iis_sites|map(attribute='physical_path')|list|unique }}"
+    - name: Set fact win_iis_webapplications_path from win_iis_webapplications
+      set_fact:
+        win_iis_webapplications_path: "{{ win_iis_webapplications|map(attribute='physical_path')|list|unique }}"
+    - name: Set fact win_iis_directories
+      set_fact:
+        win_iis_directories: "{{ win_iis_sites_path|default([]) + win_iis_webapplications_path|default([]) }}"
+
+- name: Make sure all physical path do exist
+  win_file:
+    path: '{{ item }}'
+    state: directory
+  with_items: "{{ win_iis_directories }}"
+
 - name: Set fact win_iis_application_pool_parsed list from win_iis_sites
   set_fact:
     win_iis_application_pools_parsed: "{{ win_iis_sites|map(attribute='application_pool')|list|unique }}"
