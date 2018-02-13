@@ -46,19 +46,17 @@
     state: present
   with_items: "{{ win_iis_application_pools_all }}"
 
-- block:
-    - name: Set fact win_iis_temp_var from win_iis_webapplications
-      set_fact:
-        win_iis_temp_var:
-          name: "{{ item }}"
-      with_items: "{{ win_iis_webapplications|map(attribute='site')|list|unique }}"
-      when: item not in win_iis_websites|map(attribute='name')|list
-      register: win_iis_temp_var_out
+- name: Set fact win_iis_temp_var from win_iis_webapplications
+  set_fact:
+    win_iis_temp_var:
+      name: "{{ item }}"
+  with_items: "{{ win_iis_webapplications|map(attribute='site')|list|unique }}"
+  when: item not in win_iis_websites|map(attribute='name')|list
+  register: win_iis_temp_var_out
 
-    - name: Set fact win_iis_websites_from_webapplication
-      set_fact:
-        win_iis_websites_from_webapplication: "{{ win_iis_temp_var_out.results|map(attribute='ansible_facts.win_iis_temp_var')|list }}"
-  when: win_iis_webapplications
+- name: Set fact win_iis_websites_from_webapplication
+  set_fact:
+    win_iis_websites_from_webapplication: "{{ win_iis_temp_var_out.results|map(attribute='ansible_facts.win_iis_temp_var')|list }}"
 
 - name: Set fact win_iis_websites_all
   set_fact:
