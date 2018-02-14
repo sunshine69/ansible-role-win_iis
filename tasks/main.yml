@@ -57,6 +57,17 @@
   set_fact:
     win_iis_websites_from_webapplication: "{{ win_iis_temp_var_out.results|map(attribute='ansible_facts.win_iis_temp_var')|list }}"
 
+# Learn more about jme_path
+# http://jmespath.org/tutorial.html#list-and-slice-projections
+# This will return a list of dict with a key 'name' and value is the site name
+# so we can create them later.
+
+# I could not find a easy way to exclude the item that is already in
+# win_iis_websites using this approach though.
+#- name: Set fact win_iis_websites_all
+#  set_fact:
+#    win_iis_websites_from_webapplications: "{{ win_iis_webapplications | json_query('[].{name: site}') }}"
+
 - name: Set fact win_iis_websites_all
   set_fact:
     win_iis_websites_all: "{{ win_iis_websites + win_iis_websites_from_webapplication }}"
@@ -65,13 +76,24 @@
   win_iis_website:
     application_pool: "{{ item.application_pool|default(omit) }}"
     hostname: "{{ item.hostname|default(omit) }}"
-    ip: "{{ item.ip|default(omit) }}"
     name: "{{ item.name }}"
     parameters: "{{ item.parameters|default(omit) }}"
     physical_path: "{{ item.physical_path|default(omit) }}"
-    port: "{{ item.port|default(omit) }}"
     site_id: "{{ item.site_id|default(omit) }}"
     ssl: "{{ item.ssl|default(omit) }}"
+    state: "{{ item.state|default(omit) }}"
+  with_items: "{{ win_iis_websites_all }}"
+
+# This allows us to setup certificate and host_header, protocol if needed.
+- name: Configure web bindings for win_iis_websites
+  win_iis_webbinding:
+    name: "{{ item.name }}"
+    certificate_hash: "{{ item.certificate_hash|default(omit) }}"
+    certificate_store_name: "{{ item.certificate_store_name|default(omit) }}"
+    host_header: "{{ item.host_header|default(omit) }}"
+    ip: "{{ item.ip|default(omit) }}"
+    port: "{{ item.port|default(omit) }}"
+    protocol: "{{ item.protocol|default(omit) }}"
     state: "{{ item.state|default(omit) }}"
   with_items: "{{ win_iis_websites_all }}"
 
