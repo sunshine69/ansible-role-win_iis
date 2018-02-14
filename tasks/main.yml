@@ -45,11 +45,6 @@
     state: present
   with_items: "{{ win_iis_application_pools_all }}"
 
-# Learn more about jme_path :D
-# http://jmespath.org/tutorial.html#list-and-slice-projections
-# This will return a list of dict with a key 'name' and value is the site name
-# so we can create them later.
-
 - name: Set fact win_iis_websites_from_webapplication
   set_fact:
     win_iis_websites_from_webapplications: >
