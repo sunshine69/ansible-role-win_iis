@@ -45,37 +45,27 @@
     state: present
   with_items: "{{ win_iis_application_pools_all }}"
 
-- name: Set fact win_iis_temp_var from win_iis_webapplications
-  set_fact:
-    win_iis_temp_var:
-      name: "{{ item }}"
-  with_items: "{{ win_iis_webapplications|map(attribute='site')|list|unique }}"
-  when: item not in win_iis_websites|map(attribute='name')|list
-  register: win_iis_temp_var_out
-
-- name: Set fact win_iis_websites_from_webapplication
-  set_fact:
-    win_iis_websites_from_webapplication: "{{ win_iis_temp_var_out.results|map(attribute='ansible_facts.win_iis_temp_var')|list }}"
-
-# Learn more about jme_path
+# Learn more about jme_path :D
 # http://jmespath.org/tutorial.html#list-and-slice-projections
 # This will return a list of dict with a key 'name' and value is the site name
 # so we can create them later.
 
-# I could not find a easy way to exclude the item that is already in
-# win_iis_websites using this approach though.
-#- name: Set fact win_iis_websites_all
-#  set_fact:
-#    win_iis_websites_from_webapplications: "{{ win_iis_webapplications | json_query('[].{name: site}') }}"
+- name: Set fact win_iis_websites_from_webapplication
+  set_fact:
+    win_iis_websites_from_webapplications: >
+      {{ win_iis_websites_from_webapplications|default([]) + [{'name': item['site']}] }}
+  with_items: "{{ win_iis_webapplications }}"
+  when: item.site not in win_iis_websites|json_query('[].name')
 
 - name: Set fact win_iis_websites_all
   set_fact:
-    win_iis_websites_all: "{{ win_iis_websites + win_iis_websites_from_webapplication }}"
+    win_iis_websites_all: "{{ win_iis_websites + win_iis_websites_from_webapplication|unique }}"
 
 - name: Create web sites defined in win_iis_websites
   win_iis_website:
     application_pool: "{{ item.application_pool|default(omit) }}"
     hostname: "{{ item.hostname|default(omit) }}"
+    port: "{{ item.port|default(omit) }}"
     name: "{{ item.name }}"
     parameters: "{{ item.parameters|default(omit) }}"
     physical_path: "{{ item.physical_path|default(omit) }}"
@@ -85,6 +75,18 @@
   with_items: "{{ win_iis_websites_all }}"
 
 # This allows us to setup certificate and host_header, protocol if needed.
+
+- name: Remove wrong protocol bindings created by win_iis_website module
+  win_iis_webbinding:
+    name: "{{ item.name }}"
+    host_header: "{{ item.host_header|default(omit) }}"
+    ip: "{{ item.ip|default(omit) }}"
+    port: "{{ item.port|default(omit) }}"
+    protocol: "http"
+    state: "absent"
+  with_items: "{{ win_iis_websites_all }}"
+  when: item.ssl
+
 - name: Configure web bindings for win_iis_websites
   win_iis_webbinding:
     name: "{{ item.name }}"
@@ -94,7 +96,6 @@
     ip: "{{ item.ip|default(omit) }}"
     port: "{{ item.port|default(omit) }}"
     protocol: "{{ item.protocol|default(omit) }}"
-    state: "{{ item.state|default(omit) }}"
   with_items: "{{ win_iis_websites_all }}"
 
 - name: Create Web Applciation defined in win_iis_webapplications
