@@ -33,16 +33,20 @@
 
 - name: Set fact win_iis_application_pools_from_sites list from win_iis_websites
   set_fact:
-    win_iis_application_pools_from_sites: "{{ win_iis_websites|map(attribute='application_pool')|list|unique }}"
+    win_iis_application_pools_from_sites: >
+      {{ win_iis_application_pools_from_sites|default([]) + [{'name': item['application_pool']}] }}
+  with_items: "{{ win_iis_websites }}"
+  when: item.application_pool not in win_iis_application_pools|json_query('[].name')
 
 - name: Set fact win_iis_application_pools_all
   set_fact:
     win_iis_application_pools_all: "{{ (win_iis_application_pools + win_iis_application_pools_from_sites)|unique }}"
 
-- name: Create Application Pool defined in win_iis_application_pools
+- name: Create/Remove Application Pool defined in win_iis_application_pools
   win_iis_webapppool:
-    name: "{{ item }}"
-    state: present
+    name: "{{ item.name }}"
+    state: "{{ item.state|default('present') }}"
+    attributes: "{{ item.attributes|default(omit) }}"
   with_items: "{{ win_iis_application_pools_all }}"
 
 - name: Set fact win_iis_websites_from_webapplication
