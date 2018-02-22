@@ -40,7 +40,7 @@
 
 - name: Set fact win_iis_application_pools_all
   set_fact:
-    win_iis_application_pools_all: "{{ (win_iis_application_pools + win_iis_application_pools_from_sites)|unique }}"
+    win_iis_application_pools_all: "{{ (win_iis_application_pools + win_iis_application_pools_from_sites|default([]))|unique }}"
 
 - name: Create/Remove Application Pool defined in win_iis_application_pools
   win_iis_webapppool:
