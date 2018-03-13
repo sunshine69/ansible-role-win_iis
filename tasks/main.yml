@@ -70,8 +70,8 @@
     physical_path: "{{ item.physical_path|default(omit) }}"
     site_id: "{{ item.site_id|default(omit) }}"
     ssl: "{{ item.ssl|default(omit) }}"
-    state: "{{ item.state|default(omit) }}"
   with_items: "{{ win_iis_websites_all }}"
+  register: win_iis_website_result
 
 # This allows us to setup certificate and host_header, protocol if needed.
 
@@ -96,8 +96,16 @@
     port: "{{ item.port|default(omit) }}"
     protocol: "{{ item.protocol|default(omit) }}"
   with_items: "{{ win_iis_websites_all }}"
+  register: win_iis_webbinding_result
 
-- name: Create Web Applciation defined in win_iis_webapplications
+- name: restart website if win_iis_website or win_iis_webbinding changed
+  win_iis_website:
+    name: "{{ item.name }}"
+    state: "{{ (item.state|default('started') == 'absent')|ternary('absent', 'restarted') }}"
+  with_items: "{{ win_iis_websites_all }}"
+  when: win_iis_website_result.changed or win_iis_webbinding_result.changed
+
+- name: Create Web Application defined in win_iis_webapplications
   win_iis_webapplication:
     name: "{{ item.name }}"
     application_pool: "{{ item.application_pool|default(omit) }}"
