@@ -34,7 +34,9 @@
 - name: Set fact win_iis_application_pools_from_sites list from win_iis_websites
   set_fact:
     win_iis_application_pools_from_sites: >
-      {{ win_iis_application_pools_from_sites|default([]) + [{'name': item['application_pool']}] }}
+      {{ win_iis_application_pools_from_sites|default([]) + [{'name': item.application_pool}] }}
+    win_iis_application_pool_lookup: >
+      {{ win_iis_application_pool_lookup|default({})|combine({item.name: item.application_pool}) }}
   with_items: "{{ win_iis_websites }}"
   when: item.application_pool not in win_iis_application_pools|json_query('[].name')
 
@@ -108,7 +110,7 @@
 - name: Create Web Application defined in win_iis_webapplications
   win_iis_webapplication:
     name: "{{ item.name }}"
-    application_pool: "{{ item.application_pool|default(omit) }}"
+    application_pool: "{{ item.application_pool|default(win_iis_application_pool_lookup[item.site|default()]|default(omit)) }}"
     physical_path: "{{ item.physical_path|default(omit) }}"
     site: "{{ item.site }}"
     state: "{{ item.state|default(omit) }}"
