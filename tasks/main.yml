@@ -35,10 +35,14 @@
   set_fact:
     win_iis_application_pools_from_sites: >
       {{ win_iis_application_pools_from_sites|default([]) + [{'name': item.application_pool}] }}
+  with_items: "{{ win_iis_websites }}"
+  when: item.application_pool not in win_iis_application_pools|json_query('[].name')
+
+- name: Set fact win_iis_application_pool_lookup list from win_iis_websites
+  set_fact:
     win_iis_application_pool_lookup: >
       {{ win_iis_application_pool_lookup|default({})|combine({item.name: item.application_pool}) }}
   with_items: "{{ win_iis_websites }}"
-  when: item.application_pool not in win_iis_application_pools|json_query('[].name')
 
 - name: Set fact win_iis_application_pools_all
   set_fact:
