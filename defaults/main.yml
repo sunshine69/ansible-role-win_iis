@@ -1,4 +1,6 @@
 # defaults file for win_iis
+
+ansible_install_dir: 'c:\ansible_install'
 win_iis_base_features:
   - name: Net-Framework-Core
   - name: Web-Server
@@ -27,3 +29,9 @@ chocolatey_pkgs: "{{ chocolatey_base_pkgs + chocolatey_extra_pkgs }}"
 win_iis_application_pools: []
 win_iis_websites: []
 win_iis_webapplications: []
+
+# This is setting for default properties set using command appcmd.
+
+win_iis_webroot:
+  globalization: 'en-AU'
+  uiCulture: 'en-AU'
