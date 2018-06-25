@@ -7,6 +7,12 @@
     include_management_tools: "{{ item.include_management_tools|default(omit) }}"
   with_items: "{{ win_features }}"
 
+- include_tasks: install_msi_mods.yml
+  with_items: "{{ win_iis_external_modules }}"
+  when: win_iis_rewrite_enabled|default()
+  loop_control:
+    loop_var: task_item
+
 - name: Install chocolatey pkgs
   win_chocolatey:
     name: "{{ item }}"
