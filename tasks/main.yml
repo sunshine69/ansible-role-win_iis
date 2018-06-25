@@ -7,17 +7,11 @@
     include_management_tools: "{{ item.include_management_tools|default(omit) }}"
   with_items: "{{ win_features }}"
 
-- block:
-    - name: Install rewrite module if win_iis_rewrite_enabled
-      win_url:
-        url: "{{ item.url|default(xvt_public_repo_url) }}/{{ item.msi }}"
-        dest: '{{ ansible_install_dir }}\{{ item.msi }}'
-
-    - name: Run the installer
-      win_command: 'msiexec.exe /qn /i {{ ansible_install_dir }}\{{ item.msi }}'
-
+- include_tasks: install_msi_mods.yml
   with_items: "{{ win_iis_external_modules }}"
   when: win_iis_rewrite_enabled|default()
+  loop_control:
+    loop_var: task_item
 
 - name: Install chocolatey pkgs
   win_chocolatey:
