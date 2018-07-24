@@ -1,23 +1,25 @@
-- name: Install IIS related features
-  win_feature:
-    name: "{{ item.name }}"
-    source: "{{ win_feature_source|default(omit) }}"
-    state: present
-    include_sub_features: "{{ item.include_sub_features|default(omit) }}"
-    include_management_tools: "{{ item.include_management_tools|default(omit) }}"
-  with_items: "{{ win_features }}"
+- block:
+    - name: Install IIS related features
+      win_feature:
+        name: "{{ item.name }}"
+        source: "{{ win_feature_source|default(omit) }}"
+        state: present
+        include_sub_features: "{{ item.include_sub_features|default(omit) }}"
+        include_management_tools: "{{ item.include_management_tools|default(omit) }}"
+      with_items: "{{ win_features }}"
 
-- include_tasks: install_msi_mods.yml
-  with_items: "{{ win_iis_external_modules }}"
-  when: win_iis_rewrite_enabled|default()
-  loop_control:
-    loop_var: task_item
+    - include_tasks: install_msi_mods.yml
+      with_items: "{{ win_iis_external_modules }}"
+      when: win_iis_rewrite_enabled|default()
+      loop_control:
+        loop_var: task_item
 
-- name: Install chocolatey pkgs
-  win_chocolatey:
-    name: "{{ item }}"
-    state: present
-  with_items: "{{ chocolatey_pkgs }}"
+    - name: Install chocolatey pkgs
+      win_chocolatey:
+        name: "{{ item }}"
+        state: present
+      with_items: "{{ chocolatey_pkgs }}"
+  when: win_iis_install_base|default()
 
 - name: Deploy ps script to set globalization settings for dotnet
   win_template:

@@ -3,6 +3,8 @@ Role: win_iis
 
 Install IIS and dotnet suites
 
+Also setup a iis websites and applications.
+
 Requirements
 ------------
 
@@ -11,6 +13,15 @@ Role Variables
 --------------
 
 If not defined anywhere, the for a variable, dict key name will be the exact parameter name of the corresponding ansible modules.
+
+- `win_iis_install_base` - Optional - Default is `False`.
+  This flag allows us to install the win_iis_base_features and releated
+  chocolatey packages. This usually only requires when we build the instance
+  AMI or setup the server the first time - or upgrade the packages to the new
+  versions etc..
+
+  By setting this to false the role will skip it and focusing on setting up and
+  configure the websites and application pool which save a lot of time.
 
 - `win_feature_source` - Path to the source to allow for win_feature to install/remove. Optional - Default not set.
 
@@ -40,7 +51,7 @@ win_wcf_features:
 ```
 - `chocolatey_base_pkgs` - optional - default [ 'dotnetcore' ]
 - `chocolatey_extra_pkgs` - optional default  []
-- `chocolatey_pkgs` - optional - default 
+- `chocolatey_pkgs` - optional - default
 ``` "{{ chocolatey_base_pkgs + chocolatey_extra_pkgs }}"
 ```
 
