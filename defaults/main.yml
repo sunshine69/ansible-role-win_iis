@@ -20,7 +20,7 @@ win_features: "{{ win_iis_base_features + win_wcf_features + win_extra_features 
 chocolatey_base_pkgs:
 # The monitoring app uses dotnetcore which requires the command dotnet.exe (in
 # c:\program files\dotnet)
-  - dotnetcore
+  - name: dotnetcore
 
 chocolatey_extra_pkgs: []
 

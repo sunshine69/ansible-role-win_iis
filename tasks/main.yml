@@ -16,8 +16,8 @@
 
     - name: Install chocolatey pkgs
       win_chocolatey:
-        name: "{{ item }}"
-        state: present
+        name: "{{ item.name }}"
+        state: "{{ item.state|default('present') }}"
       with_items: "{{ chocolatey_pkgs }}"
   when: win_iis_install_base|default()
 
