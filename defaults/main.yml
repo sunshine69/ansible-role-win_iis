@@ -33,7 +33,7 @@ win_iis_webapplications: []
 # This is setting for default properties set using command appcmd.
 
 win_iis_webroot:
-  globalization: 'en-AU'
+  culture: 'en-AU'
   uiCulture: 'en-AU'
 
 win_iis_external_modules:
