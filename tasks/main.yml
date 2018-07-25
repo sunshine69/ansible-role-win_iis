@@ -18,6 +18,19 @@
       win_chocolatey:
         name: "{{ item.name }}"
         state: "{{ item.state|default('present') }}"
+        version: "{{ item.versionversion|default(omit) }}"
+        timeout: "{{ item.timeout|default(omit) }}"
+        source: "{{ item.source|default(omit) }}"
+        proxy_url: "{{ item.proxy_url|default(omit) }}"
+        proxy_username: "{{ item.proxy_username|default(omit) }}"
+        proxy_password: "{{ item.proxy_password|default(omit) }}"
+        params: "{{ item.params|default(omit) }}"
+        install_args: "{{ item.install_args|default(omit) }}"
+        ignore_dependencies: "{{ item.ignore_dependencies|default(omit) }}"
+        ignore_checksums: "{{ item.ignore_checksums|default(omit) }}"
+        force: "{{ item.force|default(omit) }}"
+        allow_prerelease: "{{ item.allow_prerelease|default(omit) }}"
+        allow_empty_checksums: "{{ item.allow_empty_checksums|default(omit) }}"
       with_items: "{{ chocolatey_pkgs }}"
   when: win_iis_install_base|default()
 
