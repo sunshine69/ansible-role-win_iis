@@ -84,6 +84,15 @@
     attributes: "{{ item.attributes|default(omit) }}"
   with_items: "{{ win_iis_application_pools_all }}"
 
+# We only pick up the site name here from win_iis_webapplications to auto
+# create site list if there is not a similar site defined in win_iis_websites. We
+# do not want to define a full site attributes because there might be a case
+# that different webapplication share the same site and we might fall into the
+# same definition again.
+
+# However if we need more site attributes rather than just the name, we can
+# explicitly define these sites under variable win_iis_websites.
+
 - name: Set fact win_iis_websites_from_webapplication
   set_fact:
     win_iis_websites_from_webapplications: >
