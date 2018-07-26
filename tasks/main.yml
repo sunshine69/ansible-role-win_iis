@@ -114,6 +114,10 @@
     physical_path: "{{ item.physical_path|default(omit) }}"
     site_id: "{{ item.site_id|default(omit) }}"
     ssl: "{{ item.ssl|default(omit) }}"
+    anonymous_authentication: "{{ item.anonymous_authentication|default(omit) }}"
+    basic_authentication: "{{ item.basic_authentication|default(omit) }}"
+    windows_authentication: "{{ item.windows_authentication|default(omit) }}"
+    forms_authentication: "{{ item.forms_authentication|default(omit) }}"
   with_items: "{{ win_iis_websites_all }}"
   register: win_iis_website_result
 
@@ -130,6 +134,12 @@
   with_items: "{{ win_iis_websites_all }}"
   when: item.ssl
 
+# Even IIS allow us to have multiple bindings with different protocol and port
+# per site, we do not use it for simplicity and easier to manage we assume one
+# site having only one binding.
+
+# If we need the same app listen on another port and/or protocol - create a new
+# site using the same physical path.
 - name: Configure web bindings for win_iis_websites
   win_iis_webbinding:
     name: "{{ item.name }}"
@@ -155,5 +165,9 @@
     application_pool: "{{ item.application_pool|default(win_iis_application_pool_lookup[item.site|default()]|default(omit)) }}"
     physical_path: "{{ item.physical_path|default(omit) }}"
     site: "{{ item.site }}"
+    anonymous_authentication: "{{ item.anonymous_authentication|default(omit) }}"
+    basic_authentication: "{{ item.basic_authentication|default(omit) }}"
+    windows_authentication: "{{ item.windows_authentication|default(omit) }}"
+    forms_authentication: "{{ item.forms_authentication|default(omit) }}"
     state: "{{ item.state|default(omit) }}"
   with_items: "{{ win_iis_webapplications }}"
