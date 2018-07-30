@@ -1,4 +1,4 @@
-- name: Install rewrite module if win_iis_rewrite_enabled
+- name: Install MSI modules
   win_get_url:
     url: "{{ task_item.url|default(xvt_public_repo_url) }}/{{ task_item.msi }}"
     dest: '{{ ansible_install_dir }}\{{ task_item.msi }}'

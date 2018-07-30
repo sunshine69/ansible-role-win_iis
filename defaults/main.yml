@@ -37,5 +37,6 @@ win_iis_webroot:
   uiCulture: 'en-AU'
 
 win_iis_external_modules:
-  - name: rewrite
-    msi: rewrite_amd64.msi
+  - msi: rewrite_amd64.msi
+
+win_iis_msi_pkgs: []

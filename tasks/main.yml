@@ -1,3 +1,6 @@
+- debug:
+    var: win_iis_install_base
+
 - block:
     - name: Install IIS related features
       win_feature:
@@ -11,6 +14,14 @@
     - include_tasks: install_msi_mods.yml
       with_items: "{{ win_iis_external_modules }}"
       when: win_iis_rewrite_enabled|default()
+      loop_control:
+        loop_var: task_item
+
+    - debug:
+        var: win_iis_msi_pkgs
+
+    - include_tasks: install_msi_mods.yml
+      with_items: "{{ win_iis_msi_pkgs }}"
       loop_control:
         loop_var: task_item
 
