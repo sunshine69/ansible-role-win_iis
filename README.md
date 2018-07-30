@@ -55,6 +55,22 @@ win_wcf_features:
 ``` "{{ chocolatey_base_pkgs + chocolatey_extra_pkgs }}"
 ```
 
+- `win_iis_external_modules` - Default see below.
+- `win_iis_msi_pkgs` - Default empty list.
+
+  These above are a list of dictionary to specify a msi packages. The external
+  module by default contains the iis rewrite modules if
+  `win_iis_rewrite_enabled` is set.
+
+  Example:
+```
+win_iis_msi_pkgs:
+  - msi: <msi_file_name - required>
+    url: <base_url_without_file_name_above_to_download_the_file - required>
+    ignore_errors: <True/False - ignore errors or not default is False. Not required>
+```
+
+
 - ` win_iis_application_pools` - List of application pool name to be created or remove - Optional - default empty
     If in `win_iis_websites` (see below) is provided and in each
     item the key `application_pool` is set then these values will automatically be parsed

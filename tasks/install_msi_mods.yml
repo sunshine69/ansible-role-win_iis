@@ -5,3 +5,4 @@
 
 - name: Run the installer
   win_command: 'msiexec.exe /qn /i {{ ansible_install_dir }}\{{ task_item.msi }}'
+  ignore_errors: "{{ task_item.ignore_errors|default(False) }}"

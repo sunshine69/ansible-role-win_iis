@@ -1,5 +1,6 @@
 - debug:
     var: win_iis_install_base
+    verbosity: 2
 
 - block:
     - name: Install IIS related features
@@ -19,6 +20,7 @@
 
     - debug:
         var: win_iis_msi_pkgs
+        verbosity: 3
 
     - include_tasks: install_msi_mods.yml
       with_items: "{{ win_iis_msi_pkgs }}"
