@@ -31,7 +31,7 @@
       win_chocolatey:
         name: "{{ item.name }}"
         state: "{{ item.state|default('present') }}"
-        version: "{{ item.versionversion|default(omit) }}"
+        version: "{{ item.version|default(omit) }}"
         timeout: "{{ item.timeout|default(omit) }}"
         source: "{{ item.source|default(omit) }}"
         proxy_url: "{{ item.proxy_url|default(omit) }}"
