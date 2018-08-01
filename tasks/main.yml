@@ -27,6 +27,20 @@
       loop_control:
         loop_var: task_item
 
+    # Ansible bug? Happen with all version basically can not do string concat with
+    # backslash
+
+    - set_fact:
+        ansible_install_dir_with_backslash: >
+          {{ ansible_install_dir }}\
+
+    - name: Download dependencies install files for chocolatey packages
+      win_get_url:
+        url: "{{ item.url }}"
+        dest: "{{ item.savepath|default(ansible_install_dir_with_backslash|trim + item.url|basename) }}"
+      with_items: "{{ win_iis_chocolatey_pkgs }}"
+      when: item.url|default()
+
     - name: Install chocolatey pkgs
       win_chocolatey:
         name: "{{ item.name }}"
@@ -44,7 +58,8 @@
         force: "{{ item.force|default(omit) }}"
         allow_prerelease: "{{ item.allow_prerelease|default(omit) }}"
         allow_empty_checksums: "{{ item.allow_empty_checksums|default(omit) }}"
-      with_items: "{{ chocolatey_pkgs }}"
+      with_items: "{{ win_iis_chocolatey_pkgs }}"
+      when: not item.download_only|default(False)
   when: win_iis_install_base|default()
 
 - name: Deploy ps script to set globalization settings for dotnet
