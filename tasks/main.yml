@@ -38,6 +38,7 @@
       win_get_url:
         url: "{{ item.url }}"
         dest: "{{ item.savepath|default(ansible_install_dir_with_backslash|trim + item.url|basename) }}"
+        force: no
       with_items: "{{ win_iis_chocolatey_pkgs }}"
       when: item.url|default()
 
