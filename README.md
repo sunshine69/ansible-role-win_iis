@@ -23,6 +23,9 @@ If not defined anywhere, the for a variable, dict key name will be the exact par
   By setting this to false the role will skip it and focusing on setting up and
   configure the websites and application pool which save a lot of time.
 
+- `win_iis_remove_default_website` - Optional - Default value: True.
+  Remove the IIS Default Website
+
 - `win_feature_source` - Path to the source to allow for win_feature to install/remove. Optional - Default not set.
 
 The path points to a directory which seems not obvious. It looks like a signature to allow windows to find out its installation media rather than a directory containing files of sources information.
