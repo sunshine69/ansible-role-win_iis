@@ -1,28 +1,78 @@
-- name: Install IIS related features
-  win_feature:
-    name: "{{ item.name }}"
-    source: "{{ win_feature_source|default(omit) }}"
-    state: present
-    include_sub_features: "{{ item.include_sub_features|default(omit) }}"
-    include_management_tools: "{{ item.include_management_tools|default(omit) }}"
-  with_items: "{{ win_features }}"
+- debug:
+    var: win_iis_install_base
+    verbosity: 2
 
-- include_tasks: install_msi_mods.yml
-  with_items: "{{ win_iis_external_modules }}"
-  when: win_iis_rewrite_enabled|default()
-  loop_control:
-    loop_var: task_item
+- block:
+    - name: Install IIS related features
+      win_feature:
+        name: "{{ item.name }}"
+        source: "{{ win_feature_source|default(omit) }}"
+        state: present
+        include_sub_features: "{{ item.include_sub_features|default(omit) }}"
+        include_management_tools: "{{ item.include_management_tools|default(omit) }}"
+      with_items: "{{ win_features }}"
 
-- name: Install chocolatey pkgs
-  win_chocolatey:
-    name: "{{ item }}"
-    state: present
-  with_items: "{{ chocolatey_pkgs }}"
+    - include_tasks: install_msi_mods.yml
+      with_items: "{{ win_iis_external_modules }}"
+      when: win_iis_rewrite_enabled|default()
+      loop_control:
+        loop_var: task_item
+
+    - debug:
+        var: win_iis_msi_pkgs
+        verbosity: 3
+
+    - include_tasks: install_msi_mods.yml
+      with_items: "{{ win_iis_msi_pkgs }}"
+      loop_control:
+        loop_var: task_item
+
+    # Ansible bug? Happen with all version basically can not do string concat with
+    # backslash
+
+    - set_fact:
+        ansible_install_dir_with_backslash: >
+          {{ ansible_install_dir }}\
+
+    - name: Download dependencies install files for chocolatey packages
+      win_get_url:
+        url: "{{ item.url }}"
+        dest: "{{ item.savepath|default(ansible_install_dir_with_backslash|trim + item.url|basename) }}"
+        force: no
+      with_items: "{{ win_iis_chocolatey_pkgs }}"
+      when: item.url|default()
+
+    - name: Install chocolatey pkgs
+      win_chocolatey:
+        name: "{{ item.name }}"
+        state: "{{ item.state|default('present') }}"
+        version: "{{ item.version|default(omit) }}"
+        timeout: "{{ item.timeout|default(omit) }}"
+        source: "{{ item.source|default(omit) }}"
+        proxy_url: "{{ item.proxy_url|default(omit) }}"
+        proxy_username: "{{ item.proxy_username|default(omit) }}"
+        proxy_password: "{{ item.proxy_password|default(omit) }}"
+        params: "{{ item.params|default(omit) }}"
+        install_args: "{{ item.install_args|default(omit) }}"
+        ignore_dependencies: "{{ item.ignore_dependencies|default(omit) }}"
+        ignore_checksums: "{{ item.ignore_checksums|default(omit) }}"
+        force: "{{ item.force|default(omit) }}"
+        allow_prerelease: "{{ item.allow_prerelease|default(omit) }}"
+        allow_empty_checksums: "{{ item.allow_empty_checksums|default(omit) }}"
+      with_items: "{{ win_iis_chocolatey_pkgs }}"
+      when: not item.download_only|default(False)
+  when: win_iis_install_base|default()
 
 - name: Deploy ps script to set globalization settings for dotnet
   win_template:
     src: webroot-settings.ps1
     dest: '{{ ansible_install_dir }}\webroot-settings.ps1'
+
+- name: Remove Default Web Site
+  win_iis_website:
+    name: "Default Web Site"
+    state: absent
+  when: win_iis_remove_default_website|default(True)
 
 - name: Run the globalization settings for dotnet script
   win_command: 'powershell {{ ansible_install_dir }}\webroot-settings.ps1'
@@ -69,6 +119,15 @@
     attributes: "{{ item.attributes|default(omit) }}"
   with_items: "{{ win_iis_application_pools_all }}"
 
+# We only pick up the site name here from win_iis_webapplications to auto
+# create site list if there is not a similar site defined in win_iis_websites. We
+# do not want to define a full site attributes because there might be a case
+# that different webapplication share the same site and we might fall into the
+# same definition again.
+
+# However if we need more site attributes rather than just the name, we can
+# explicitly define these sites under variable win_iis_websites.
+
 - name: Set fact win_iis_websites_from_webapplication
   set_fact:
     win_iis_websites_from_webapplications: >
@@ -90,6 +149,10 @@
     physical_path: "{{ item.physical_path|default(omit) }}"
     site_id: "{{ item.site_id|default(omit) }}"
     ssl: "{{ item.ssl|default(omit) }}"
+    anonymous_authentication: "{{ item.anonymous_authentication|default(omit) }}"
+    basic_authentication: "{{ item.basic_authentication|default(omit) }}"
+    windows_authentication: "{{ item.windows_authentication|default(omit) }}"
+    forms_authentication: "{{ item.forms_authentication|default(omit) }}"
   with_items: "{{ win_iis_websites_all }}"
   register: win_iis_website_result
 
@@ -106,6 +169,12 @@
   with_items: "{{ win_iis_websites_all }}"
   when: item.ssl
 
+# Even IIS allow us to have multiple bindings with different protocol and port
+# per site, we do not use it for simplicity and easier to manage we assume one
+# site having only one binding.
+
+# If we need the same app listen on another port and/or protocol - create a new
+# site using the same physical path.
 - name: Configure web bindings for win_iis_websites
   win_iis_webbinding:
     name: "{{ item.name }}"
@@ -131,5 +200,9 @@
     application_pool: "{{ item.application_pool|default(win_iis_application_pool_lookup[item.site|default()]|default(omit)) }}"
     physical_path: "{{ item.physical_path|default(omit) }}"
     site: "{{ item.site }}"
+    anonymous_authentication: "{{ item.anonymous_authentication|default(omit) }}"
+    basic_authentication: "{{ item.basic_authentication|default(omit) }}"
+    windows_authentication: "{{ item.windows_authentication|default(omit) }}"
+    forms_authentication: "{{ item.forms_authentication|default(omit) }}"
     state: "{{ item.state|default(omit) }}"
   with_items: "{{ win_iis_webapplications }}"

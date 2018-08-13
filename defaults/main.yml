@@ -17,14 +17,14 @@ win_extra_features: []
 
 win_features: "{{ win_iis_base_features + win_wcf_features + win_extra_features }}"
 
-chocolatey_base_pkgs:
+win_iis_chocolatey_base_pkgs:
 # The monitoring app uses dotnetcore which requires the command dotnet.exe (in
 # c:\program files\dotnet)
-  - dotnetcore
+  - name: dotnetcore
 
-chocolatey_extra_pkgs: []
+win_iis_chocolatey_extra_pkgs: []
 
-chocolatey_pkgs: "{{ chocolatey_base_pkgs + chocolatey_extra_pkgs }}"
+win_iis_chocolatey_pkgs: "{{ win_iis_chocolatey_base_pkgs + win_iis_chocolatey_extra_pkgs }}"
 
 win_iis_application_pools: []
 win_iis_websites: []
@@ -33,9 +33,10 @@ win_iis_webapplications: []
 # This is setting for default properties set using command appcmd.
 
 win_iis_webroot:
-  globalization: 'en-AU'
+  culture: 'en-AU'
   uiCulture: 'en-AU'
 
 win_iis_external_modules:
-  - name: rewrite
-    msi: rewrite_amd64.msi
+  - msi: rewrite_amd64.msi
+
+win_iis_msi_pkgs: []

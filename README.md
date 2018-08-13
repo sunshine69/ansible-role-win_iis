@@ -3,6 +3,8 @@ Role: win_iis
 
 Install IIS and dotnet suites
 
+Also setup a iis websites and applications.
+
 Requirements
 ------------
 
@@ -11,6 +13,18 @@ Role Variables
 --------------
 
 If not defined anywhere, the for a variable, dict key name will be the exact parameter name of the corresponding ansible modules.
+
+- `win_iis_install_base` - Optional - Default is `False`.
+  This flag allows us to install the win_iis_base_features and releated
+  chocolatey packages. This usually only requires when we build the instance
+  AMI or setup the server the first time - or upgrade the packages to the new
+  versions etc..
+
+  By setting this to false the role will skip it and focusing on setting up and
+  configure the websites and application pool which save a lot of time.
+
+- `win_iis_remove_default_website` - Optional - Default value: True.
+  Remove the IIS Default Website
 
 - `win_feature_source` - Path to the source to allow for win_feature to install/remove. Optional - Default not set.
 
@@ -40,9 +54,25 @@ win_wcf_features:
 ```
 - `chocolatey_base_pkgs` - optional - default [ 'dotnetcore' ]
 - `chocolatey_extra_pkgs` - optional default  []
-- `chocolatey_pkgs` - optional - default 
+- `chocolatey_pkgs` - optional - default
 ``` "{{ chocolatey_base_pkgs + chocolatey_extra_pkgs }}"
 ```
+
+- `win_iis_external_modules` - Default see below.
+- `win_iis_msi_pkgs` - Default empty list.
+
+  These above are a list of dictionary to specify a msi packages. The external
+  module by default contains the iis rewrite modules if
+  `win_iis_rewrite_enabled` is set.
+
+  Example:
+```
+win_iis_msi_pkgs:
+  - msi: <msi_file_name - required>
+    url: <base_url_without_file_name_above_to_download_the_file - required>
+    ignore_errors: <True/False - ignore errors or not default is False. Not required>
+```
+
 
 - ` win_iis_application_pools` - List of application pool name to be created or remove - Optional - default empty
     If in `win_iis_websites` (see below) is provided and in each
