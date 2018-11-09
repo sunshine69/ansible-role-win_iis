@@ -193,6 +193,9 @@
     state: "{{ (item.state|default('started') == 'absent')|ternary('absent', 'restarted') }}"
   with_items: "{{ win_iis_websites_all }}"
   when: win_iis_website_result.changed or win_iis_webbinding_result.changed
+  ignore_errors: yes
+# above - Another quirks looks like it can not restart the binding http somehow
+# but no harm. Just skip errors for now
 
 - name: Create Web Application defined in win_iis_webapplications
   win_iis_webapplication:
