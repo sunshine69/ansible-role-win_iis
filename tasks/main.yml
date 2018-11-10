@@ -131,7 +131,7 @@
 - name: Set fact win_iis_websites_from_webapplication
   set_fact:
     win_iis_websites_from_webapplications: >
-      {{ win_iis_websites_from_webapplications|default([]) + [{'name': item['site']}] }}
+      {{ win_iis_websites_from_webapplications|default([]) + [{'name': item['site'], 'physical_path': item['physical_path']}] }}
   with_items: "{{ win_iis_webapplications }}"
   when: item.site not in win_iis_websites|json_query('[].name')
 
