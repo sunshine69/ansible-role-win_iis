@@ -131,7 +131,7 @@
 - name: Set fact win_iis_websites_from_webapplication
   set_fact:
     win_iis_websites_from_webapplications: >
-      {{ win_iis_websites_from_webapplications|default([]) + [{'name': item['site']}] }}
+      {{ win_iis_websites_from_webapplications|default([]) + [{'name': item['site'], 'physical_path': item['physical_path']}] }}
   with_items: "{{ win_iis_webapplications }}"
   when: item.site not in win_iis_websites|json_query('[].name')
 
@@ -167,7 +167,7 @@
     protocol: "http"
     state: "absent"
   with_items: "{{ win_iis_websites_all }}"
-  when: item.ssl
+  when: item.ssl|default()
 
 # Even IIS allow us to have multiple bindings with different protocol and port
 # per site, we do not use it for simplicity and easier to manage we assume one
