@@ -98,11 +98,16 @@ function website([string] $name, [string] $state = "present", [string] $path, [s
 
             if ($certHash -ne "")
             {
-                Remove-WebBinding -Name $name -BindingInformation "${IpAddress}:${port}:${hostHeader}" -Protocol http
-                New-WebBinding -Name $name -IPAddress $IpAddress -Port $port -HostHeader $hostHeader -Protocol https
-                $httpsBinding = Get-WebBinding -Name $name -Protocol "https"
-                	$httpsBinding.AddSslCertificate($certHash, "my")
+                if (Get-WebBinding -Name $name -IPAddress $IpAddress -Port $port -HostHeader $hostHeader -Protocol http) {
+                  Remove-WebBinding -Name $name -BindingInformation "${IpAddress}:${port}:${hostHeader}" -Protocol http
                 }
+
+                if (!(Get-WebBinding -Name $name -IPAddress $IpAddress -Port $port -HostHeader $hostHeader -Protocol https)) {
+                  New-WebBinding -Name $name -IPAddress $IpAddress -Port $port -HostHeader $hostHeader -Protocol https
+                }
+                $httpsBinding = Get-WebBinding -Name $name -Protocol "https"
+                $httpsBinding.AddSslCertificate($certHash, "my")
+            }
 
                 Set-ItemProperty IIS:\Sites\$name -name ApplicationPool -value $apppool
 
