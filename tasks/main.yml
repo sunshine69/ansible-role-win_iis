@@ -112,12 +112,30 @@
   set_fact:
     win_iis_application_pools_all: "{{ (win_iis_application_pools + win_iis_application_pools_from_sites|default([]))|unique }}"
 
+# We have issues with the identity created. For now trying my own powershell
+# solution instead
+#- name: Create/Remove Application Pool defined in win_iis_application_pools
+#  win_iis_webapppool:
+#    name: "{{ item.name }}"
+#    state: "{{ item.state|default('present') }}"
+#    attributes: "{{ item.attributes|default(omit) }}"
+#  with_items: "{{ win_iis_application_pools_all }}"
+
+- name: Template common-web.ps1 script
+  win_copy:
+    src: "common-web.ps1"
+    dest: '{{ ansible_install_dir }}\common-web.ps1'
+
 - name: Create/Remove Application Pool defined in win_iis_application_pools
-  win_iis_webapppool:
-    name: "{{ item.name }}"
-    state: "{{ item.state|default('present') }}"
-    attributes: "{{ item.attributes|default(omit) }}"
+  win_shell: |
+    . {{ ansible_install_dir }}\common-web.ps1
+    $processModel = @{}
+    {% for mykey, myval in (item.attributes|default({})).items() %}
+    ${{ mykey }} = {{ '$true' if myval == true else '"' + myval + '"' }}
+    {% endfor %}
+    apppool -name "{{ item.name }}" -state "{{ item.state|default('present') }}" -processModel $processModel
   with_items: "{{ win_iis_application_pools_all }}"
+  when: item.name | default()
 
 # We only pick up the site name here from win_iis_webapplications to auto
 # create site list if there is not a similar site defined in win_iis_websites. We
@@ -140,62 +158,18 @@
     win_iis_websites_all: "{{ win_iis_websites + win_iis_websites_from_webapplications|default([])|unique }}"
 
 - name: Create web sites defined in win_iis_websites
-  win_iis_website:
-    application_pool: "{{ item.application_pool|default(omit) }}"
-    hostname: "{{ item.hostname|default(omit) }}"
-    port: "{{ item.port|default(omit) }}"
-    name: "{{ item.name }}"
-    parameters: "{{ item.parameters|default(omit) }}"
-    physical_path: "{{ item.physical_path|default(omit) }}"
-    site_id: "{{ item.site_id|default(omit) }}"
-    ssl: "{{ item.ssl|default(omit) }}"
-    anonymous_authentication: "{{ item.anonymous_authentication|default(omit) }}"
-    basic_authentication: "{{ item.basic_authentication|default(omit) }}"
-    windows_authentication: "{{ item.windows_authentication|default(omit) }}"
-    forms_authentication: "{{ item.forms_authentication|default(omit) }}"
+  win_shell: |
+    . {{ ansible_install_dir }}\common-web.ps1
+    website -name "{{ item.name }}" -state "{{ item.state|default('started') }}" {{ '-hostHeader "' + item.hostname + '"' if item.hostname|default() else '' }} -Path "{{ item.physical_path }}" {{ '-certHash "' + item.certificate_hash + '"' if item.certificate_hash|default() else '' }} {{ '-formsAuthentication $true' if item.forms_authentication|default() else '' }} {{ '-windowsAuthentication $true' if item.windows_authentication|default() else '' }} {{ '-anonymousAuthentication $true' if item.anonymous_authentication|default() else '' }} {{ '-Ssl $true' if item.ssl|default() else '' }} {{ '-Port ' + item.port|string if item.port|default() else '' }}
   with_items: "{{ win_iis_websites_all }}"
-  register: win_iis_website_result
+  when: item.name | default() and item.physical_path|default()
 
-# This allows us to setup certificate and host_header, protocol if needed.
-
-- name: Remove wrong protocol bindings created by win_iis_website module
-  win_iis_webbinding:
-    name: "{{ item.name }}"
-    host_header: "{{ item.host_header|default(omit) }}"
-    ip: "{{ item.ip|default(omit) }}"
-    port: "{{ item.port|default(omit) }}"
-    protocol: "http"
-    state: "absent"
+- name: Create host entries in hosts file for the domain
+  win_lineinfile:
+    path: 'c:\windows\system32\drivers\etc\hosts'
+    line: '127.0.0.1 {{ item.hostname }}'
   with_items: "{{ win_iis_websites_all }}"
-  when: item.ssl|default()
-
-# Even IIS allow us to have multiple bindings with different protocol and port
-# per site, we do not use it for simplicity and easier to manage we assume one
-# site having only one binding.
-
-# If we need the same app listen on another port and/or protocol - create a new
-# site using the same physical path.
-- name: Configure web bindings for win_iis_websites
-  win_iis_webbinding:
-    name: "{{ item.name }}"
-    certificate_hash: "{{ item.certificate_hash|default(omit) }}"
-    certificate_store_name: "{{ item.certificate_store_name|default(omit) }}"
-    host_header: "{{ item.host_header|default(omit) }}"
-    ip: "{{ item.ip|default(omit) }}"
-    port: "{{ item.port|default(omit) }}"
-    protocol: "{{ item.protocol|default(omit) }}"
-  with_items: "{{ win_iis_websites_all }}"
-  register: win_iis_webbinding_result
-
-- name: restart website if win_iis_website or win_iis_webbinding changed
-  win_iis_website:
-    name: "{{ item.name }}"
-    state: "{{ (item.state|default('started') == 'absent')|ternary('absent', 'restarted') }}"
-  with_items: "{{ win_iis_websites_all }}"
-  when: win_iis_website_result.changed or win_iis_webbinding_result.changed
-  ignore_errors: yes
-# above - Another quirks looks like it can not restart the binding http somehow
-# but no harm. Just skip errors for now
+  when: item.hostname|default()
 
 - name: Create Web Application defined in win_iis_webapplications
   win_iis_webapplication:
