@@ -133,7 +133,7 @@
     {% for mykey, myval in (item.attributes|default({})).items() %}
     ${{ mykey }} = {{ '$true' if myval == true else '"' + myval + '"' }}
     {% endfor %}
-    apppool -name "{{ item.name }}" -state "{{ item.state|default('present') }}" -processModel $processModel -runtimeVersion "{{ item.attributes.runtimeVersion|default('v4.0') }}" -pipelineMode "{{ item.pipelineMode|default('Integrated') }}" -startMode "{{ item.startMode|default('AlwaysRunning') }}"
+    apppool -name "{{ item.name }}" -state "{{ item.state|default('present') }}" -processModel $processModel -runtimeVersion "{{ ((item.attributes|default({})).runtimeVersion)|default('v4.0') }}" -pipelineMode "{{ item.pipelineMode|default('Integrated') }}" -startMode "{{ item.startMode|default('AlwaysRunning') }}"
   with_items: "{{ win_iis_application_pools_all }}"
   when: item.name | default()
 
