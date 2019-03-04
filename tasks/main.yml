@@ -101,16 +101,19 @@
       {{ win_iis_application_pools_from_sites|default([]) + [{'name': item.application_pool}] }}
   with_items: "{{ win_iis_websites }}"
   when: item.application_pool not in win_iis_application_pools|json_query('[].name')
+  no_log: no_log|default(True)
 
 - name: Set fact win_iis_application_pool_lookup list from win_iis_websites
   set_fact:
     win_iis_application_pool_lookup: >
       {{ win_iis_application_pool_lookup|default({})|combine({item.name: item.application_pool}) }}
   with_items: "{{ win_iis_websites }}"
+  no_log: no_log|default(True)
 
 - name: Set fact win_iis_application_pools_all
   set_fact:
     win_iis_application_pools_all: "{{ (win_iis_application_pools + win_iis_application_pools_from_sites|default([]))|unique }}"
+  no_log: no_log|default(True)
 
 # We have issues with the identity created. For now trying my own powershell
 # solution instead
@@ -136,6 +139,7 @@
     apppool -name "{{ item.name }}" -state "{{ item.state|default('present') }}" -processModel $processModel -runtimeVersion "{{ ((item.attributes|default({})).runtimeVersion)|default('v4.0') }}" -pipelineMode "{{ item.pipelineMode|default('Integrated') }}" -startMode "{{ item.startMode|default('AlwaysRunning') }}"
   with_items: "{{ win_iis_application_pools_all }}"
   when: item.name | default()
+  no_log: no_log|default(True)
 
 # We only pick up the site name here from win_iis_webapplications to auto
 # create site list if there is not a similar site defined in win_iis_websites. We
@@ -152,10 +156,12 @@
       {{ win_iis_websites_from_webapplications|default([]) + [{'name': item['site'], 'physical_path': item['physical_path']}] }}
   with_items: "{{ win_iis_webapplications }}"
   when: item.site not in win_iis_websites|json_query('[].name')
+  no_log: no_log|default(True)
 
 - name: Set fact win_iis_websites_all
   set_fact:
     win_iis_websites_all: "{{ win_iis_websites + win_iis_websites_from_webapplications|default([])|unique }}"
+  no_log: no_log|default(True)
 
 - name: Create web sites defined in win_iis_websites
   win_shell: |
@@ -163,6 +169,7 @@
     website -name "{{ item.name }}" -state "{{ item.state|default('started') }}" {{ '-hostHeader "' + item.hostname + '"' if item.hostname|default() else '' }} -Path "{{ item.physical_path }}" {{ '-certHash "' + item.certificate_hash + '"' if item.certificate_hash|default() else '' }} {{ '-formsAuthentication $true' if item.forms_authentication|default() else '' }} {{ '-windowsAuthentication $true' if item.windows_authentication|default() else '' }} {{ '-anonymousAuthentication $true' if item.anonymous_authentication|default() else '' }} {{ '-Ssl $true' if item.ssl|default() else '' }} {{ '-Port ' + item.port|string if item.port|default() else '' }}
   with_items: "{{ win_iis_websites_all }}"
   when: item.name | default() and item.physical_path|default()
+  no_log: no_log|default(True)
 
 - name: Create host entries in hosts file for the domain
   win_lineinfile:
@@ -183,3 +190,4 @@
     forms_authentication: "{{ item.forms_authentication|default(omit) }}"
     state: "{{ item.state|default(omit) }}"
   with_items: "{{ win_iis_webapplications }}"
+  no_log: no_log|default(True)
