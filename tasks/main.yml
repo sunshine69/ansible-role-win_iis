@@ -4,13 +4,10 @@
 
 - block:
     - name: Install IIS related features
-      win_feature:
-        name: "{{ item.name }}"
-        source: "{{ win_feature_source|default(omit) }}"
-        state: present
-        include_sub_features: "{{ item.include_sub_features|default(omit) }}"
-        include_management_tools: "{{ item.include_management_tools|default(omit) }}"
+      win_shell: |
+        Enable-WindowsOptionalFeature -Online -FeatureName {{ item.name }}
       with_items: "{{ win_features }}"
+      when: item.name | default()
 
     - include_tasks: install_msi_mods.yml
       with_items: "{{ win_iis_external_modules }}"

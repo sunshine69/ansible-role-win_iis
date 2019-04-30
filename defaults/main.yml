@@ -11,7 +11,10 @@ win_wcf_features:
   # These are for the WCF to work - see
   # https://docs.microsoft.com/en-us/dotnet/framework/wcf/whats-wcf
   - name: NET-HTTP-Activation
-  - name: NET-WCF-HTTP-Activation45
+  - name: NET-WCF-HTTP-Activation46
+  - name: WCF-Services46
+  - name: WCF-HTTP-Activation
+  - name: WCF-HTTP-Activation46
 
 win_extra_features: []
 
