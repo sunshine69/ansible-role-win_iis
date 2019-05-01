@@ -144,7 +144,6 @@
     apppool -name "{{ item.name }}" -state "{{ item.state|default('present') }}" -processModel $processModel -runtimeVersion "{{ ((item.attributes|default({})).runtimeVersion)|default('v4.0') }}" -pipelineMode "{{ item.pipelineMode|default('Integrated') }}" -startMode "{{ item.startMode|default('AlwaysRunning') }}"
   with_items: "{{ win_iis_application_pools_all }}"
   when: item.name | default()
-  no_log: True
 
 # We only pick up the site name here from win_iis_webapplications to auto
 # create site list if there is not a similar site defined in win_iis_websites. We
@@ -174,7 +173,6 @@
     website -name "{{ item.name }}" -state "{{ item.state|default('started') }}" {{ '-hostHeader "' + item.hostname + '"' if item.hostname|default() else '' }} -Path "{{ item.physical_path }}" {{ '-certHash "' + item.certificate_hash + '"' if item.certificate_hash|default() else '' }} {{ '-formsAuthentication $true' if item.forms_authentication|default() else '' }} {{ '-windowsAuthentication $true' if item.windows_authentication|default() else '' }} {{ '-anonymousAuthentication $true' if item.anonymous_authentication|default() else '' }} {{ '-Ssl $true' if item.ssl|default() else '' }} {{ '-Port ' + item.port|string if item.port|default() else '' }}
   with_items: "{{ win_iis_websites_all }}"
   when: item.name | default() and item.physical_path|default()
-  no_log: True
 
 - name: Create host entries in hosts file for the domain
   win_lineinfile:
@@ -196,4 +194,3 @@
     ssl_flags: "{{ item.ssl_flags|default(omit) }}"
     state: "{{ item.state|default(omit) }}"
   with_items: "{{ win_iis_webapplications }}"
-  no_log: True

@@ -42,6 +42,7 @@ $result = @{
   application_pool = $application_pool
   changed = $false
   physical_path = $physical_path
+  DEBUG = ""
 }
 
 # Ensure WebAdministration module is loaded
@@ -125,7 +126,6 @@ try {
         }
     }
     if ($windowsAuthentication) {
-        $result.DEBUG = "Reaching here"
         $currentWindowsAuthentication = (Get-WebConfigurationProperty -filter /system.webServer/security/authentication/windowsAuthentication -name enabled -PSPath IIS:\ -location $site/$name).Value
         if ($windowsAuthentication -ne $currentWindowsAuthentication) {
             $result.DEBUG += "Going to set windowAuthentication to be $windowsAuthentication"
@@ -142,9 +142,17 @@ try {
         }
     }
     if ($sslFlags) {
+        $result.DEBUG += "sslFlags: $sslFlags"
         $ConfigSection = Get-IISConfigSection -SectionPath "system.webServer/security/access" -CommitPath "$site" -Location "$name"
-        #to set:
-        Set-IISConfigAttributeValue -AttributeName sslFlags -AttributeValue "$sslFlags" -ConfigElement $ConfigSection
+        #get
+        $currentSslFlags = Get-IISConfigAttributeValue -ConfigElement $ConfigSection -AttributeName sslFlags
+        $result.DEBUG += "Current sslFlags: $currentSslFlags"
+        if ($currentSslFlags -ne $sslFlags) {
+            $result.DEBUG += "Going to set sslFlags ..."
+            #set:
+            Set-IISConfigAttributeValue -AttributeName sslFlags -AttributeValue "$sslFlags" -ConfigElement $ConfigSection
+            $result.changed = $true
+        }
     }
   }
 } catch {
