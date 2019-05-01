@@ -185,6 +185,7 @@
     basic_authentication: "{{ item.basic_authentication|default(omit) }}"
     windows_authentication: "{{ item.windows_authentication|default(omit) }}"
     forms_authentication: "{{ item.forms_authentication|default(omit) }}"
+    ssl_flags: "{{ item.ssl_flags|default(omit) }}"
     state: "{{ item.state|default(omit) }}"
   with_items: "{{ win_iis_webapplications }}"
   no_log: True

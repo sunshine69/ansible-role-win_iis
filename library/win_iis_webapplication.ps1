@@ -35,6 +35,9 @@ $basicAuthentication = Get-Attr $params "basic_authentication" $FALSE;
 $windowsAuthentication = Get-Attr $params "windows_authentication" $FALSE;
 $formsAuthentication = Get-Attr $params "forms_authentication" $FALSE;
 
+# SSL flags
+$sslFlags = Get-Attr $params "ssl_flags" $FALSE;
+
 $result = @{
   application_pool = $application_pool
   changed = $false
@@ -138,7 +141,11 @@ try {
             $result.changed = $true
         }
     }
-
+    if ($sslFlags) {
+        $ConfigSection = Get-IISConfigSection -SectionPath "system.webServer/security/access" -CommitPath "$site" -Location "$name"
+        #to set:
+        Set-IISConfigAttributeValue -AttributeName sslFlags -AttributeValue "$sslFlags" -ConfigElement $ConfigSection
+    }
   }
 } catch {
   Fail-Json $result $_.Exception.Message
