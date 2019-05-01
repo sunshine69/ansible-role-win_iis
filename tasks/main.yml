@@ -13,9 +13,8 @@
       with_items: "{{ win_features }}"
 
     - name: Install Windows Optional Features required by IIS
-      win_optional_feature:
-        name: "{{ item.name }}"
-        state: "{{ item.state|default('present') }}"
+      win_shell: |
+        Enable-WindowsOptionalFeature -Online -FeatureName {{ item.name }}
       with_items: "{{ win_optional_features|default([]) }}"
 
     - include_tasks: install_msi_mods.yml
