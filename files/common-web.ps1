@@ -169,7 +169,6 @@ function application([string] $name, [string] $path, [string] $website, [string]
 			Set-WebConfigurationProperty -filter /system.webServer/security/authentication/basicAuthentication -name enabled -value $basicAuthentication -PSPath IIS:\ -location $website/$name
 			Set-WebConfigurationProperty -filter /system.webServer/security/authentication/windowsAuthentication -name enabled -value $windowsAuthentication -PSPath IIS:\ -location $website/$name
 
-            Set-WebConfigurationProperty -filter /system.webServer/security -name access
 			if ($formsAuthentication)
 			{
 				Set-WebConfigurationProperty -filter /system.web/authentication -name mode -value Forms -PSPath IIS:\ -location $website/$name
