@@ -35,6 +35,7 @@ Example:
 ```
 
 - `win_iis_base_features` - a list of dict of base features - optional - default
+
 ```
 win_iis_base_features:
   - name: Net-Framework-Core
@@ -42,16 +43,26 @@ win_iis_base_features:
     include_sub_features: yes
     include_management_tools: yes
 ```
+
 - `win_wcf_features` - These are for the WCF to work - see https://docs.microsoft.com/en-us/dotnet/framework/wcf/whats-wcf - optional - default
+
 ```
 win_wcf_features:
   - name: NET-HTTP-Activation
   - name: NET-WCF-HTTP-Activation45
 ```
+
 - `win_extra_features` - Extra features can be added in inventory - optiona, default []
 - `win_features` - The final features list we are going to install - optional - default is union of all above.
+
 ``` {{ win_iis_base_features + win_wcf_features + win_extra_features }}
 ```
+
+- `win_optional_features` - The windows optional features you want to install
+
+  This is using powershell as ansible does not have the module for it yet.
+  Schedule for anisble 2.8 though.
+
 - `chocolatey_base_pkgs` - optional - default [ 'dotnetcore' ]
 - `chocolatey_extra_pkgs` - optional default  []
 - `chocolatey_pkgs` - optional - default
