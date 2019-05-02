@@ -183,9 +183,13 @@
 
 # This is for the module win_iis_webapplications to be able to set the ssl_flags.
 - name: Set windows IIS in applicationHost.config security/access/overrideModeDefault to be 'Allow'
-  win_shell: |
-    . {{ ansible_install_dir }}\common-web.ps1
-    xmlPoke -file (Get-Item C:\Windows\System32\inetsrv\config\applicationHost.config) -xpath "/configuration/configSections/sectionGroup[@name='system.webServer']/sectionGroup[@name='security']/section[@name='access']/@overrideModeDefault"  -value "Allow"
+  win_xml:
+    path: 'C:\Windows\System32\inetsrv\config\applicationHost.config'
+    xpath: "/configuration/configSections/sectionGroup[@name='system.webServer']/sectionGroup[@name='security']/section[@name='access']"
+    type: attribute
+    attribute: overrideModeDefault
+    fragment: 'Allow'
+  notify: 'Restart IIS'
 
 - name: Create Web Application defined in win_iis_webapplications
   win_iis_webapplication:
