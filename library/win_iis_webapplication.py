@@ -53,6 +53,7 @@ options:
       - Set the sslFlags value. This is in the system.webServer\security\access config item
       - The value is a string - See https://docs.microsoft.com/en-us/iis/configuration/system.webserver/security/access for possible values.
       - Example value: 'Ssl,SslNegotiateCert' - or 'Ssl,SslRequireCert'
+      - Note that you need to modify C:\Windows\System32\inetsrv\config\applicationHost.config the line having <section name="access" overrideModeDefault="Deny" /> - change it to 'Allow'
 
 author:
 - Henrik Wallström
