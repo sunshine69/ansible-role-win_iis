@@ -13,6 +13,11 @@ win_wcf_features:
   - name: NET-HTTP-Activation
   - name: NET-WCF-HTTP-Activation45
 
+win_optional_features:
+  - name: WCF-Services45
+  - name: WCF-HTTP-Activation
+  - name: WCF-HTTP-Activation45
+
 win_extra_features: []
 
 win_features: "{{ win_iis_base_features + win_wcf_features + win_extra_features }}"

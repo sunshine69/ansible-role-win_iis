@@ -12,6 +12,11 @@
         include_management_tools: "{{ item.include_management_tools|default(omit) }}"
       with_items: "{{ win_features }}"
 
+    - name: Install Windows Optional Features required by IIS
+      win_shell: |
+        Enable-WindowsOptionalFeature -Online -FeatureName {{ item.name }}
+      with_items: "{{ win_optional_features|default([]) }}"
+
     - include_tasks: install_msi_mods.yml
       with_items: "{{ win_iis_external_modules }}"
       when: win_iis_rewrite_enabled|default()
@@ -139,7 +144,6 @@
     apppool -name "{{ item.name }}" -state "{{ item.state|default('present') }}" -processModel $processModel -runtimeVersion "{{ ((item.attributes|default({})).runtimeVersion)|default('v4.0') }}" -pipelineMode "{{ item.pipelineMode|default('Integrated') }}" -startMode "{{ item.startMode|default('AlwaysRunning') }}"
   with_items: "{{ win_iis_application_pools_all }}"
   when: item.name | default()
-  no_log: True
 
 # We only pick up the site name here from win_iis_webapplications to auto
 # create site list if there is not a similar site defined in win_iis_websites. We
@@ -169,7 +173,6 @@
     website -name "{{ item.name }}" -state "{{ item.state|default('started') }}" {{ '-hostHeader "' + item.hostname + '"' if item.hostname|default() else '' }} -Path "{{ item.physical_path }}" {{ '-certHash "' + item.certificate_hash + '"' if item.certificate_hash|default() else '' }} {{ '-formsAuthentication $true' if item.forms_authentication|default() else '' }} {{ '-windowsAuthentication $true' if item.windows_authentication|default() else '' }} {{ '-anonymousAuthentication $true' if item.anonymous_authentication|default() else '' }} {{ '-Ssl $true' if item.ssl|default() else '' }} {{ '-Port ' + item.port|string if item.port|default() else '' }}
   with_items: "{{ win_iis_websites_all }}"
   when: item.name | default() and item.physical_path|default()
-  no_log: True
 
 - name: Create host entries in hosts file for the domain
   win_lineinfile:
@@ -177,6 +180,12 @@
     line: '127.0.0.1 {{ item.hostname }}'
   with_items: "{{ win_iis_websites_all }}"
   when: item.hostname|default()
+
+# This is for the module win_iis_webapplications to be able to set the ssl_flags.
+- name: Set windows IIS in applicationHost.config security/access/overrideModeDefault to be 'Allow'
+  win_shell: |
+    . {{ ansible_install_dir }}\common-web.ps1
+    xmlPoke -file (Get-Item C:\Windows\System32\inetsrv\config\applicationHost.config) -xpath "/configuration/configSections/sectionGroup[@name='system.webServer']/sectionGroup[@name='security']/section[@name='access']/@overrideModeDefault"  -value "Allow"
 
 - name: Create Web Application defined in win_iis_webapplications
   win_iis_webapplication:
@@ -188,6 +197,6 @@
     basic_authentication: "{{ item.basic_authentication|default(omit) }}"
     windows_authentication: "{{ item.windows_authentication|default(omit) }}"
     forms_authentication: "{{ item.forms_authentication|default(omit) }}"
+    ssl_flags: "{{ item.ssl_flags|default(omit) }}"
     state: "{{ item.state|default(omit) }}"
   with_items: "{{ win_iis_webapplications }}"
-  no_log: True

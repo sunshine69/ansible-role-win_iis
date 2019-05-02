@@ -143,6 +143,7 @@ function website([string] $name, [string] $state = "present", [string] $path, [s
 	}
 }
 
+# Not in use - we use our custom win_iis_webapplication in the library folder
 function application([string] $name, [string] $path, [string] $website, [string] $apppool, [bool] $preloadEnabled = $false, [bool] $anonymousAuthentication = $false, [bool] $basicAuthentication = $false, [bool] $windowsAuthentication = $false, [bool] $formsAuthentication = $false) {
 	 "Creating / Updating Application {0}..." -f $name
 
@@ -167,6 +168,7 @@ function application([string] $name, [string] $path, [string] $website, [string]
 			Set-WebConfigurationProperty -filter /system.webServer/security/authentication/anonymousAuthentication -name enabled -value $anonymousAuthentication -PSPath IIS:\ -location $website/$name
 			Set-WebConfigurationProperty -filter /system.webServer/security/authentication/basicAuthentication -name enabled -value $basicAuthentication -PSPath IIS:\ -location $website/$name
 			Set-WebConfigurationProperty -filter /system.webServer/security/authentication/windowsAuthentication -name enabled -value $windowsAuthentication -PSPath IIS:\ -location $website/$name
+
 			if ($formsAuthentication)
 			{
 				Set-WebConfigurationProperty -filter /system.web/authentication -name mode -value Forms -PSPath IIS:\ -location $website/$name

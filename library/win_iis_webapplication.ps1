@@ -35,6 +35,9 @@ $basicAuthentication = Get-Attr $params "basic_authentication" $FALSE;
 $windowsAuthentication = Get-Attr $params "windows_authentication" $FALSE;
 $formsAuthentication = Get-Attr $params "forms_authentication" $FALSE;
 
+# SSL flags
+$sslFlags = Get-Attr $params "ssl_flags" $FALSE;
+
 $result = @{
   application_pool = $application_pool
   changed = $false
@@ -122,10 +125,8 @@ try {
         }
     }
     if ($windowsAuthentication) {
-        $result.DEBUG = "Reaching here"
         $currentWindowsAuthentication = (Get-WebConfigurationProperty -filter /system.webServer/security/authentication/windowsAuthentication -name enabled -PSPath IIS:\ -location $site/$name).Value
         if ($windowsAuthentication -ne $currentWindowsAuthentication) {
-            $result.DEBUG += "Going to set windowAuthentication to be $windowsAuthentication"
             Set-WebConfigurationProperty -filter /system.webServer/security/authentication/windowsAuthentication -name enabled -value $windowsAuthentication -PSPath IIS:\ -location $site/$name
             $result.changed = $true
         }
@@ -138,7 +139,16 @@ try {
             $result.changed = $true
         }
     }
-
+    if ($sslFlags) {
+        $ConfigSection = Get-IISConfigSection -SectionPath "system.webServer/security/access" -CommitPath "$site" -Location "$name"
+        #get
+        $currentSslFlags = Get-IISConfigAttributeValue -ConfigElement $ConfigSection -AttributeName sslFlags
+        if ($currentSslFlags -ne $sslFlags) {
+            #set:
+            Set-IISConfigAttributeValue -AttributeName sslFlags -AttributeValue "$sslFlags" -ConfigElement $ConfigSection
+            $result.changed = $true
+        }
+    }
   }
 } catch {
   Fail-Json $result $_.Exception.Message
