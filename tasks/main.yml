@@ -140,9 +140,20 @@
   win_shell: |
     . {{ ansible_install_dir }}\common-web.ps1
     $processModel = @{}
+
+    #newline below is important here. jinjar2 somehow remove newlines causing PS error
     {% for mykey, myval in (item.attributes|default({})).items() %}
-    ${{ mykey }} = {{ '$true' if myval == true else '"' + myval + '"' }}
+      {% if 'processModel' in mykey %}
+
+        ${{ mykey }} = {%- if myval == true -%}$true{%- elif myval is number -%}{{ myval }}{%- else -%}"{{ myval }}"{%- endif -%}
+
+      {% endif %}
     {% endfor %}
+
+    "DEBUG OUTPUT PROCESS MODEL"
+    $processModel
+    "END DEBUG"
+
     apppool -name "{{ item.name }}" -state "{{ item.state|default('present') }}" -processModel $processModel -runtimeVersion "{{ ((item.attributes|default({})).runtimeVersion)|default('v4.0') }}" -pipelineMode "{{ item.pipelineMode|default('Integrated') }}" -startMode "{{ item.startMode|default('AlwaysRunning') }}"
   with_items: "{{ win_iis_application_pools_all }}"
   when: item.name | default()
