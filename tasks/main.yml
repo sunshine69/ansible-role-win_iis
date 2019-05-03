@@ -66,21 +66,23 @@
         allow_empty_checksums: "{{ item.allow_empty_checksums|default(omit) }}"
       with_items: "{{ win_iis_chocolatey_pkgs }}"
       when: not item.download_only|default(False)
+
+    - name: Deploy ps script to set globalization settings for dotnet
+      win_template:
+        src: webroot-settings.ps1
+        dest: '{{ ansible_install_dir }}\webroot-settings.ps1'
+
+    - name: Remove Default Web Site
+      win_iis_website:
+        name: "Default Web Site"
+        state: absent
+      when: win_iis_remove_default_website|default(True)
+
+    - name: Run the globalization settings for dotnet script
+      win_command: 'powershell {{ ansible_install_dir }}\webroot-settings.ps1'
+
   when: win_iis_install_base|default()
 
-- name: Deploy ps script to set globalization settings for dotnet
-  win_template:
-    src: webroot-settings.ps1
-    dest: '{{ ansible_install_dir }}\webroot-settings.ps1'
-
-- name: Remove Default Web Site
-  win_iis_website:
-    name: "Default Web Site"
-    state: absent
-  when: win_iis_remove_default_website|default(True)
-
-- name: Run the globalization settings for dotnet script
-  win_command: 'powershell {{ ansible_install_dir }}\webroot-settings.ps1'
 
 - name: Set fact win_iis_websites_path from win_iis_websites
   set_fact:

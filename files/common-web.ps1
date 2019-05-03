@@ -18,7 +18,7 @@ trap
     exit 1
 }
 
-function apppool([string] $name, [object] $processModel, [string] $runtimeVersion = "v4.0", [string] $pipelineMode = "Integrated", [string] $startMode = "OnDemand", [string] $state = "present") {
+function apppool([string] $name, [object] $processModel, [string] $runtimeVersion = "v4.0", [string] $pipelineMode = "Integrated", [string] $startMode = "OnDemand", [Int32] $idleTimeout = 20, [string] $state = "present") {
     "Creating / Updating AppPool {0}..." -f $name
 
     $success = $false;
@@ -40,10 +40,23 @@ function apppool([string] $name, [object] $processModel, [string] $runtimeVersio
                 New-WebAppPool -Name $name
             }
 
-            Set-ItemProperty IIS:\AppPools\$name -name managedRuntimeVersion -value $runtimeVersion
-            Set-ItemProperty IIS:\AppPools\$name -name processModel -value $processModel
-            #Set-ItemProperty IIS:\AppPools\$name -name startMode -value $startMode
-            Set-WebConfigurationProperty "/system.applicationHost/applicationPools/add[@name='$name']" -name startMode -value $startMode
+            $app_pool = Get-ItemProperty IIS:\AppPools\$name | select *
+
+            if ($app_pool.managedRuntimeVersion -ne $runtimeVersion) {
+                Set-ItemProperty IIS:\AppPools\$name -name managedRuntimeVersion -value $runtimeVersion
+            }
+            if ($app_pool.processModel -ne $processModel) {
+                Set-ItemProperty IIS:\AppPools\$name -name processModel -value $processModel
+            }
+            if ($app_pool.startMode -ne $startMode) {
+                Set-ItemProperty IIS:\AppPools\$name -name startMode -value $startMode
+                #Set-WebConfigurationProperty "/system.applicationHost/applicationPools/add[@name='$name']" -name startMode -value $startMode
+            }
+
+            $process_model = $app_pool.processModel
+            if ($process_model.idleTimeout.TotalMinutes -ne $idleTimeout) {
+                Set-ItemProperty IIS:\AppPools\$name -Name processModel.idleTimeout -value ( [TimeSpan]::FromMinutes($idleTimeout))
+            }
 
             if ($startMode -eq "AlwaysRunning")
             {
