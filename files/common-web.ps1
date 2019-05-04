@@ -23,6 +23,7 @@ function apppool([string] $name, [object] $processModel, [string] $runtimeVersio
 
     $success = $false;
     $attempts = 0;
+    $change = $false;
 
     $supported_process_model_properties = @(
         'identityType',
@@ -49,17 +50,20 @@ function apppool([string] $name, [object] $processModel, [string] $runtimeVersio
             if ((Test-Path IIS:\AppPools\$name) -eq $false)
             {
                 New-WebAppPool -Name $name
+                $change = $true
             }
 
             $app_pool = Get-ItemProperty IIS:\AppPools\$name | select *
 
             if ($app_pool.managedRuntimeVersion -ne $runtimeVersion) {
                 Set-ItemProperty IIS:\AppPools\$name -name managedRuntimeVersion -value $runtimeVersion
+                $change = $true
             }
 
             if ($app_pool.startMode -ne $startMode) {
                 Set-ItemProperty IIS:\AppPools\$name -name startMode -value $startMode
                 #Set-WebConfigurationProperty "/system.applicationHost/applicationPools/add[@name='$name']" -name startMode -value $startMode
+                $change = $true
             }
 
             $current_process_model = $app_pool.processModel
@@ -76,6 +80,7 @@ function apppool([string] $name, [object] $processModel, [string] $runtimeVersio
                     if ($current_process_model.idleTimeout.TotalMinutes -ne $t_value) {
                         "Update $t_key " + $current_process_model.idleTimeout.TotalMinutes + " => $t_value"
                         Set-ItemProperty IIS:\AppPools\$name -Name processModel.idleTimeout -value ( [TimeSpan]::FromMinutes($t_value))
+                        $change = $true
                     }
                     return
                 }
@@ -84,6 +89,7 @@ function apppool([string] $name, [object] $processModel, [string] $runtimeVersio
                 if ( $current_process_model.$t_key -ne $t_value) {
                     "Update $t_key " + $current_process_model.$t_key + " => $t_value"
                     Set-ItemProperty IIS:\AppPools\$name -name processModel.$t_key -value $t_value
+                    $change = $true
                 }
             }
 
@@ -97,6 +103,11 @@ function apppool([string] $name, [object] $processModel, [string] $runtimeVersio
             }
             }
             $success = $true;
+
+            if ($change -and $state -ne 'absent') {
+                Restart-WebAppPool -Name $name
+            }
+
         }
         catch [Exception]
         {
