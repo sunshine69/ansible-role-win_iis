@@ -23,6 +23,18 @@ function apppool([string] $name, [object] $processModel, [string] $runtimeVersio
 
     $success = $false;
     $attempts = 0;
+    $change = $false;
+
+    $supported_process_model_properties = @(
+        'identityType',
+        'userName',
+        'password',
+        'loadUserProfile', #boolean
+        'setProfileEnvironment',#boolean
+        'maxProcesses', #int32
+        'idleTimeout',#int32 in minutes
+        'logonType'
+    )
 
     while($success -eq $false -and $attempts -lt 5)
     {
@@ -38,12 +50,48 @@ function apppool([string] $name, [object] $processModel, [string] $runtimeVersio
             if ((Test-Path IIS:\AppPools\$name) -eq $false)
             {
                 New-WebAppPool -Name $name
+                $change = $true
             }
 
-            Set-ItemProperty IIS:\AppPools\$name -name managedRuntimeVersion -value $runtimeVersion
-            Set-ItemProperty IIS:\AppPools\$name -name processModel -value $processModel
-            #Set-ItemProperty IIS:\AppPools\$name -name startMode -value $startMode
-            Set-WebConfigurationProperty "/system.applicationHost/applicationPools/add[@name='$name']" -name startMode -value $startMode
+            $app_pool = Get-ItemProperty IIS:\AppPools\$name | select *
+
+            if ($app_pool.managedRuntimeVersion -ne $runtimeVersion) {
+                Set-ItemProperty IIS:\AppPools\$name -name managedRuntimeVersion -value $runtimeVersion
+                $change = $true
+            }
+
+            if ($app_pool.startMode -ne $startMode) {
+                Set-ItemProperty IIS:\AppPools\$name -name startMode -value $startMode
+                #Set-WebConfigurationProperty "/system.applicationHost/applicationPools/add[@name='$name']" -name startMode -value $startMode
+                $change = $true
+            }
+
+            $current_process_model = $app_pool.processModel
+
+            $processModel.keys | ForEach-Object {
+                $t_key = $_
+                $t_value = $processModel[$_]
+
+                if (! $supported_process_model_properties.Contains($t_key)) {
+                    return
+                }
+                # When the property of processModel is an complex object eg. idleTimeout
+                if ($t_key -eq 'idleTimeout') {
+                    if ($current_process_model.idleTimeout.TotalMinutes -ne $t_value) {
+                        "Update $t_key " + $current_process_model.idleTimeout.TotalMinutes + " => $t_value"
+                        Set-ItemProperty IIS:\AppPools\$name -Name processModel.idleTimeout -value ( [TimeSpan]::FromMinutes($t_value))
+                        $change = $true
+                    }
+                    return
+                }
+
+                # Simple key => value
+                if ( $current_process_model.$t_key -ne $t_value) {
+                    "Update $t_key " + $current_process_model.$t_key + " => $t_value"
+                    Set-ItemProperty IIS:\AppPools\$name -name processModel.$t_key -value $t_value
+                    $change = $true
+                }
+            }
 
             if ($startMode -eq "AlwaysRunning")
             {
@@ -55,6 +103,11 @@ function apppool([string] $name, [object] $processModel, [string] $runtimeVersio
             }
             }
             $success = $true;
+
+            if ($change -and $state -ne 'absent') {
+                Restart-WebAppPool -Name $name
+            }
+
         }
         catch [Exception]
         {
@@ -62,6 +115,7 @@ function apppool([string] $name, [object] $processModel, [string] $runtimeVersio
         }
     }
 }
+
 
 function website([string] $name, [string] $state = "present", [string] $path, [string] $apppool, [string] $port = 443, [bool] $Ssl = $true, [string] $certHash = "", [string] $IpAddress = "*", [string] $hostHeader = "localhost", [bool] $anonymousAuthentication = $false, [bool] $basicAuthentication = $false, [bool] $windowsAuthentication = $false, [bool] $formsAuthentication = $false) {
     "Creating / Updating WebSite {0}..." -f $name
@@ -109,12 +163,17 @@ function website([string] $name, [string] $state = "present", [string] $path, [s
                 $httpsBinding.AddSslCertificate($certHash, "my")
             }
 
+
+           $web_site =  Get-ItemProperty IIS:\Sites\$name | select *
+           if ($web_site.applicationPool -ne $apppool) {
                 Set-ItemProperty IIS:\Sites\$name -name ApplicationPool -value $apppool
+           }
 
 			    Set-WebConfigurationProperty -filter /system.webServer/security/authentication/anonymousAuthentication -name enabled -value $anonymousAuthentication -PSPath IIS:\ -location $name
 			    Set-WebConfigurationProperty -filter /system.webServer/security/authentication/basicAuthentication -name enabled -value $basicAuthentication -PSPath IIS:\ -location $name
 			    Set-WebConfigurationProperty -filter /system.webServer/security/authentication/windowsAuthentication -name enabled -value $windowsAuthentication -PSPath IIS:\ -location $name
-			    if ($formsAuthentication)
+
+                if ($formsAuthentication)
 			    {
 			    	Set-WebConfigurationProperty -filter /system.web/authentication -name mode -value Forms -PSPath IIS:\ -location $name
 			    }
