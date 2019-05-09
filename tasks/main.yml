@@ -136,12 +136,13 @@
     src: "common-web.ps1"
     dest: '{{ ansible_install_dir }}\common-web.ps1'
 
+# newline in the powershell snippet below is important here. jinjar2 somehow
+# remove newlines causing PS error
 - name: Create/Remove Application Pool defined in win_iis_application_pools
   win_shell: |
     . {{ ansible_install_dir }}\common-web.ps1
     $processModel = @{}
 
-    #newline below is important here. jinjar2 somehow remove newlines causing PS error
     {% for mykey, myval in (item.attributes|default({})).items() %}
       {% if 'processModel' in mykey %}
 
