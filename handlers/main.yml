@@ -1,4 +1,4 @@
 - name: Restart IIS
-  service:
+  win_service:
     name: W3SVC
     state: restarted
