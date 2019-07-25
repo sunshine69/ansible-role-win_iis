@@ -93,6 +93,10 @@ function apppool([string] $name, [object] $processModel, [string] $runtimeVersio
                 }
             }
 
+            if ($processModel.identityType -eq "SpecificUser") {
+                Set-ItemProperty "IIS:\AppPools\$name" -name processModel -value @{userName=$processModel.username;password=$processModel.password;identitytype=3}
+            }
+
             if ($startMode -eq "AlwaysRunning")
             {
                 #Clear-WebConfiguration "/system.applicationHost/applicationPools/add[@name='$name']/recycling/periodicRestart/requests"
@@ -164,36 +168,38 @@ function website([string] $name, [string] $state = "present", [string] $path, [s
             }
 
 
-           $web_site =  Get-ItemProperty IIS:\Sites\$name | select *
-           if ($web_site.applicationPool -ne $apppool) {
-                Set-ItemProperty IIS:\Sites\$name -name ApplicationPool -value $apppool
-           }
+            $web_site =  Get-ItemProperty IIS:\Sites\$name | select *
 
-			    Set-WebConfigurationProperty -filter /system.webServer/security/authentication/anonymousAuthentication -name enabled -value $anonymousAuthentication -PSPath IIS:\ -location $name
-			    Set-WebConfigurationProperty -filter /system.webServer/security/authentication/basicAuthentication -name enabled -value $basicAuthentication -PSPath IIS:\ -location $name
-			    Set-WebConfigurationProperty -filter /system.webServer/security/authentication/windowsAuthentication -name enabled -value $windowsAuthentication -PSPath IIS:\ -location $name
 
-                if ($formsAuthentication)
-			    {
-			    	Set-WebConfigurationProperty -filter /system.web/authentication -name mode -value Forms -PSPath IIS:\ -location $name
-			    }
+			Set-WebConfigurationProperty -filter /system.webServer/security/authentication/anonymousAuthentication -name enabled -value $anonymousAuthentication -PSPath IIS:\ -location $name
+			Set-WebConfigurationProperty -filter /system.webServer/security/authentication/basicAuthentication -name enabled -value $basicAuthentication -PSPath IIS:\ -location $name
+			Set-WebConfigurationProperty -filter /system.webServer/security/authentication/windowsAuthentication -name enabled -value $windowsAuthentication -PSPath IIS:\ -location $name
 
-                if ($state -eq 'started')
-                {
-                    Start-Website $name
-                }
-                elseif ($state -eq 'stopped')
-                {
-                    Stop-Website $name
-                }
-                elseif ($state -eq 'restarted')
-                {
-                    Stop-Website $name
-                    sleep 5
-                    Start-Website $name
-                }
+            if ($formsAuthentication)
+			{
+				Set-WebConfigurationProperty -filter /system.web/authentication -name mode -value Forms -PSPath IIS:\ -location $name
+			}
 
-			    $success = $true;
+            if ($web_site.applicationPool -ne $apppool) {
+                Set-ItemProperty "IIS:\Sites\$name" -name ApplicationPool -value "$apppool"
+            }
+
+            if ($state -eq 'started')
+            {
+                Start-Website $name
+            }
+            elseif ($state -eq 'stopped')
+            {
+                Stop-Website $name
+            }
+            elseif ($state -eq 'restarted')
+            {
+                Stop-Website $name
+                sleep 5
+                Start-Website $name
+            }
+
+			$success = $true;
 		}
 		catch [Exception]
 		{
