@@ -184,7 +184,7 @@
 - name: Create web sites defined in win_iis_websites
   win_shell: |
     . {{ ansible_install_dir }}\common-web.ps1
-    website -name "{{ item.name }}" {{ '-apppool "' + item.application_pool + '"' if item.application_pool else '' }} -state "{{ item.state|default('started') }}" {{ '-hostHeader "' + item.hostname + '"' if item.hostname|default() else '' }} -Path "{{ item.physical_path }}" {{ '-certHash "' + item.certificate_hash + '"' if item.certificate_hash|default() else '' }} {{ '-formsAuthentication $true' if item.forms_authentication|default() else '' }} {{ '-windowsAuthentication $true' if item.windows_authentication|default() else '' }} {{ '-anonymousAuthentication $true' if item.anonymous_authentication|default() else '' }} {{ '-Ssl $true' if item.ssl|default() else '' }} {{ '-Port ' + item.port|string if item.port|default() else '' }}
+    website -name "{{ item.name }}" {{ '-apppool "' + item.application_pool + '"' if item.application_pool else '' }} -state "{{ item.state|default('started') }}" {{ '-hostHeader "' + item.hostname + '"' if item.hostname|default() else '' }} -Path "{{ item.physical_path }}" {{ '-certHash "' + item.certificate_hash + '"' if item.certificate_hash|default() else '' }} {{ '-formsAuthentication $true' if item.forms_authentication|default() else '' }} {{ '-windowsAuthentication $true' if item.windows_authentication|default() else '' }} {{ '-anonymousAuthentication $true' if item.anonymous_authentication|default(True) else '' }} {{ '-Ssl $true' if item.ssl|default() else '' }} {{ '-Port ' + item.port|string if item.port|default() else '' }}
   with_items: "{{ win_iis_websites_all }}"
   when: item.name | default() and item.physical_path|default()
 
