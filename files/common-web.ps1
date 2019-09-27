@@ -120,6 +120,21 @@ function apppool([string] $name, [object] $processModel, [string] $runtimeVersio
     }
 }
 
+function update_cert_hash([string] $domainPtn, [string] $certHash ) {
+    #Find all IIS sites in the host that currently using this domain cert and update the hash with new one
+    $web_sites =  Get-ItemProperty IIS:\Sites\* | select *
+
+    foreach ($site in $web_sites) {
+        Write-Host "Procesing $($site.name). Domain pattern: $domainPtn"
+        $httpsBinding = Get-WebBinding -Name $site.name -Protocol "https"
+        $bindingInformation = $httpsBinding.bindingInformation
+
+        if (($bindingInformation) -and ($bindingInformation -cmatch $domain_ptn)) {
+            Write-Host "Set ssl hash for site: $($site.name)"
+            $httpsBinding.AddSslCertificate($certHash, "my")
+        }
+    }
+}
 
 function website([string] $name, [string] $state = "present", [string] $path, [string] $apppool, [string] $port = 443, [bool] $Ssl = $true, [string] $certHash = "", [string] $IpAddress = "*", [string] $hostHeader = "localhost", [bool] $anonymousAuthentication = $false, [bool] $basicAuthentication = $false, [bool] $windowsAuthentication = $false, [bool] $formsAuthentication = $false) {
     "Creating / Updating WebSite {0}..." -f $name
